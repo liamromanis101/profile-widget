@@ -1,0 +1,386 @@
+# Cyberpunk LR101 Launch Animation Concept
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>LR101 Cyberpunk Intro</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #02040a;
+    overflow: hidden;
+    font-family: 'Courier New', monospace;
+    height: 100vh;
+  }
+
+  .intro {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background:
+      radial-gradient(circle at var(--mx, 50%) var(--my, 50%), rgba(255,0,200,0.18), transparent 18%),
+      radial-gradient(circle at top, rgba(0,255,255,0.08), transparent 45%),
+      radial-gradient(circle at bottom, rgba(255,0,180,0.08), transparent 45%),
+      #02040a;
+    overflow: hidden;
+    filter: url(#vhsNoise);
+  }
+
+  .intro::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(115deg, transparent 0%, rgba(0,255,255,0.08) 45%, rgba(255,0,200,0.12) 50%, transparent 55%);
+    transform: translateX(-120%);
+    animation: neonSweep 4s ease-in-out infinite;
+    pointer-events: none;
+  }
+
+  @keyframes neonSweep {
+    0%, 35% { transform: translateX(-120%); }
+    55% { transform: translateX(120%); }
+    100% { transform: translateX(120%); }
+  }
+
+  .scanlines::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 30;
+    background: repeating-linear-gradient(
+      to bottom,
+      rgba(255,255,255,0.035),
+      rgba(255,255,255,0.035) 1px,
+      transparent 1px,
+      transparent 4px
+    );
+    pointer-events: none;
+    animation: flicker 0.12s infinite;
+  }
+
+  @keyframes flicker {
+    0% { opacity: 0.86; }
+    50% { opacity: 0.64; }
+    100% { opacity: 0.92; }
+  }
+
+  .rain {
+    position: absolute;
+    inset: -10%;
+    background-image:
+      linear-gradient(transparent 0%, rgba(0,255,255,0.22) 100%),
+      linear-gradient(transparent 0%, rgba(255,0,200,0.16) 100%);
+    background-size: 2px 26px, 1px 18px;
+    opacity: 0.18;
+    transform: skewX(-10deg);
+    animation: rainMove 0.25s linear infinite;
+  }
+
+  @keyframes rainMove {
+    from { background-position: 0 -26px, 80px -18px; }
+    to { background-position: 0 26px, 80px 18px; }
+  }
+
+  .particles {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+  }
+
+  .particle {
+    position: absolute;
+    width: 2px;
+    height: 2px;
+    border-radius: 50%;
+    background: #00e5ff;
+    box-shadow: 0 0 8px #00e5ff, 0 0 14px #ff00c8;
+    opacity: 0;
+    animation: spark 2.7s ease-out infinite;
+  }
+
+  @keyframes spark {
+    0% { opacity: 0; transform: translateY(0) scale(0.5); }
+    15% { opacity: 1; }
+    100% { opacity: 0; transform: translateY(-140px) scale(1.6); }
+  }
+
+  .boot {
+    position: absolute;
+    top: 14%;
+    left: 9%;
+    z-index: 4;
+    color: #00e5ff;
+    font-size: clamp(0.8rem, 1.4vw, 1.15rem);
+    line-height: 2;
+    opacity: 0;
+    text-shadow: 0 0 8px #00e5ff;
+    animation: bootup 3s forwards, bootGlitch 0.4s steps(2, end) infinite;
+  }
+
+  @keyframes bootup {
+    0% { opacity: 0; clip-path: inset(0 100% 0 0); }
+    20% { opacity: 1; }
+    100% { opacity: 1; clip-path: inset(0 0 0 0); }
+  }
+
+  @keyframes bootGlitch {
+    0%, 100% { transform: translate(0); }
+    50% { transform: translate(1px, -1px); }
+  }
+
+  .logo-wrap {
+    position: relative;
+    z-index: 5;
+    opacity: 0;
+    transform: scale(1.18);
+    animation: reveal 2.5s ease forwards;
+    animation-delay: 3s;
+  }
+
+  @keyframes reveal {
+    0% { opacity: 0; filter: blur(14px) hue-rotate(80deg); transform: scale(1.18) rotateX(8deg); }
+    30% { opacity: 1; filter: blur(4px) hue-rotate(-40deg); transform: scale(1.06); }
+    42% { transform: translateX(-12px) scale(1.03); }
+    46% { transform: translateX(14px) scale(1.03); }
+    50% { transform: translateX(0) scale(1.02); }
+    100% { opacity: 1; filter: blur(0) hue-rotate(0deg); transform: scale(1); }
+  }
+
+  .ascii-box {
+    position: relative;
+    padding: clamp(24px, 4vw, 46px) clamp(28px, 5vw, 68px);
+    border: 2px solid rgba(0,255,255,0.55);
+    background: rgba(0,0,0,0.54);
+    box-shadow:
+      0 0 22px rgba(0,255,255,0.36),
+      0 0 76px rgba(255,0,180,0.24),
+      inset 0 0 28px rgba(0,255,255,0.12);
+    backdrop-filter: blur(7px);
+  }
+
+  .ascii-box::before,
+  .ascii-box::after {
+    content: '';
+    position: absolute;
+    inset: -3px;
+    border: 2px solid transparent;
+    pointer-events: none;
+    animation: borderPulse 1.7s linear infinite;
+  }
+
+  .ascii-box::before { border-top-color: #00e5ff; border-left-color: #00e5ff; }
+  .ascii-box::after { border-bottom-color: #ff00c8; border-right-color: #ff00c8; animation-delay: 0.4s; }
+
+  @keyframes borderPulse {
+    0% { opacity: 0.35; filter: drop-shadow(0 0 3px currentColor); }
+    50% { opacity: 1; filter: drop-shadow(0 0 12px currentColor); }
+    100% { opacity: 0.35; filter: drop-shadow(0 0 3px currentColor); }
+  }
+
+  pre {
+    color: #00e5ff;
+    font-size: clamp(9px, 1.25vw, 17px);
+    line-height: 1.12;
+    text-shadow:
+      0 0 5px #00e5ff,
+      0 0 12px #00e5ff,
+      0 0 22px rgba(255,0,180,0.45);
+    animation: glitch 1.7s infinite;
+  }
+
+  .pink { color: #ff00c8; text-shadow: 0 0 6px #ff00c8, 0 0 16px #ff00c8; }
+
+  @keyframes glitch {
+    0%, 100% { transform: translate(0); clip-path: inset(0 0 0 0); }
+    12% { transform: translate(-1px, 1px); }
+    24% { transform: translate(1px, -1px); }
+    36% { transform: translate(-2px, 0); clip-path: inset(8% 0 12% 0); }
+    38% { clip-path: inset(0 0 0 0); }
+    60% { transform: translate(2px, 1px); }
+  }
+
+  .subtitle {
+    margin-top: 20px;
+    text-align: center;
+    color: #9cf9ff;
+    letter-spacing: 3px;
+    font-size: clamp(0.7rem, 1vw, 0.95rem);
+    text-shadow: 0 0 10px #00e5ff;
+  }
+
+  .years {
+    margin-top: 10px;
+    text-align: center;
+    color: #ff7be5;
+    letter-spacing: 2px;
+    font-size: clamp(0.65rem, 0.95vw, 0.85rem);
+    text-shadow: 0 0 10px #ff00c8;
+  }
+
+  .audio-toggle {
+    position: fixed;
+    right: 18px;
+    bottom: 18px;
+    z-index: 50;
+    border: 1px solid rgba(0,255,255,0.7);
+    background: rgba(0,0,0,0.6);
+    color: #00e5ff;
+    padding: 10px 14px;
+    font-family: inherit;
+    letter-spacing: 1px;
+    cursor: pointer;
+    box-shadow: 0 0 14px rgba(0,255,255,0.25);
+  }
+
+  .audio-toggle:hover {
+    color: #ff7be5;
+    border-color: #ff00c8;
+    box-shadow: 0 0 18px rgba(255,0,200,0.35);
+  }
+</style>
+</head>
+<body>
+<svg width="0" height="0" aria-hidden="true">
+  <filter id="vhsNoise">
+    <feTurbulence type="fractalNoise" baseFrequency="0.018 0.09" numOctaves="2" seed="8">
+      <animate attributeName="seed" values="8;20;42;8" dur="1.4s" repeatCount="indefinite" />
+    </feTurbulence>
+    <feDisplacementMap in="SourceGraphic" scale="2" />
+  </filter>
+</svg>
+
+<div class="intro scanlines" id="intro">
+  <div class="rain"></div>
+  <div class="particles" id="particles"></div>
+
+  <div class="boot">
+    > INITIALIZING LR101 SYSTEMS<br>
+    > LOADING SECURITY MODULES<br>
+    > BYPASSING TRACE ROUTINES<br>
+    > CONNECTING TO GRID<br>
+    > ACCESS GRANTED
+  </div>
+
+  <div class="logo-wrap">
+    <div class="ascii-box">
+<pre>
+<span class="pink">██╗</span>      <span class="pink">██████╗</span>       ███╗     ██████╗    ███╗
+<span class="pink">██║</span>      <span class="pink">██╔══██╗</span>     ████║    ██╔═████╗  ████║
+<span class="pink">██║</span>      <span class="pink">██████╔╝</span>     ╚═██║    ██║██╔██║  ╚═██║
+<span class="pink">██║</span>      <span class="pink">██╔══██╗</span>       ██║    ████╔╝██║    ██║
+<span class="pink">███████╗</span> <span class="pink">██║</span>  <span class="pink">██║</span>       ██║    ╚██████╔╝    ██║
+<span class="pink">╚══════╝</span> <span class="pink">╚═╝</span>  <span class="pink">╚═╝</span>       ╚═╝     ╚═════╝     ╚═╝
+
+                         LR101
+</pre>
+      <div class="subtitle">SENIOR PENETRATION TESTER & PRINCIPAL SECURITY CONSULTANT</div>
+      <div class="years">29+ YEARS IN OFFENSIVE SECURITY</div>
+    </div>
+  </div>
+</div>
+
+<button class="audio-toggle" id="audioToggle">ENABLE SYNTH AUDIO</button>
+
+<script>
+  const intro = document.getElementById('intro');
+  const particles = document.getElementById('particles');
+  const toggle = document.getElementById('audioToggle');
+
+  // Mouse-reactive glow.
+  window.addEventListener('mousemove', (event) => {
+    intro.style.setProperty('--mx', `${event.clientX}px`);
+    intro.style.setProperty('--my', `${event.clientY}px`);
+  });
+
+  // Particle sparks.
+  for (let i = 0; i < 90; i++) {
+    const dot = document.createElement('span');
+    dot.className = 'particle';
+    dot.style.left = `${Math.random() * 100}%`;
+    dot.style.top = `${55 + Math.random() * 45}%`;
+    dot.style.animationDelay = `${Math.random() * 4}s`;
+    dot.style.animationDuration = `${1.7 + Math.random() * 2.8}s`;
+    dot.style.background = Math.random() > 0.5 ? '#00e5ff' : '#ff00c8';
+    particles.appendChild(dot);
+  }
+
+  // Simple synthwave audio bed. Browsers require a user click before audio can start.
+  let audioCtx;
+  let playing = false;
+  let oscillators = [];
+  let gain;
+
+  function startAudio() {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    gain = audioCtx.createGain();
+    gain.gain.value = 0.035;
+    gain.connect(audioCtx.destination);
+
+    const notes = [55, 82.41, 110, 164.81];
+    oscillators = notes.map((freq, index) => {
+      const osc = audioCtx.createOscillator();
+      const lfo = audioCtx.createOscillator();
+      const lfoGain = audioCtx.createGain();
+
+      osc.type = index === 0 ? 'sawtooth' : 'triangle';
+      osc.frequency.value = freq;
+
+      lfo.frequency.value = 0.08 + index * 0.03;
+      lfoGain.gain.value = 2.5;
+      lfo.connect(lfoGain);
+      lfoGain.connect(osc.frequency);
+
+      osc.connect(gain);
+      osc.start();
+      lfo.start();
+      return osc;
+    });
+  }
+
+  function stopAudio() {
+    oscillators.forEach((osc) => osc.stop());
+    oscillators = [];
+    if (audioCtx) audioCtx.close();
+  }
+
+  toggle.addEventListener('click', () => {
+    if (!playing) {
+      startAudio();
+      toggle.textContent = 'DISABLE SYNTH AUDIO';
+      playing = true;
+    } else {
+      stopAudio();
+      toggle.textContent = 'ENABLE SYNTH AUDIO';
+      playing = false;
+    }
+  });
+</script>
+</body>
+</html>
+```
+
+## Animation Flow
+
+1. Black screen with subtle CRT flicker.
+2. Neon rain effect begins.
+3. Terminal boot text types in.
+4. Screen glitches with cyan/magenta flashes.
+5. ASCII art rapidly assembles from fragments.
+6. Final glowing LR101 cyberpunk logo locks into place.
+7. Subtle looping glitch and scanline effect continues.
+
+## Suggested Enhancements
+
+* Add synthwave background audio.
+* Add VHS distortion using SVG filters.
+* Convert to MP4/GIF using FFmpeg.
+* Add particle sparks during the reveal.
+* Add interactive mouse-reactive glow.
