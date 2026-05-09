@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>GitHub Stats</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #0d1117;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 13px;
+    color: #00ff41;
+    padding: 0;
+  }
+
+  #root {
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 12px;
+  }
+
+  .title-bar {
+    background: #161b22;
+    border-bottom: 1px solid #30363d;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .prompt { color: #00ff41; }
+  .cmd { color: #c9d1d9; font-weight: 600; }
+  .timestamp { color: #8b949e; font-size: 11px; margin-left: auto; }
+
+  .body { padding: 20px 16px; }
+
+  .profile-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #21262d;
+  }
+
+  .avatar {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    border: 2px solid #00ff41;
+  }
+
+  .avatar-placeholder {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    border: 2px solid #00ff41;
+    background: #161b22;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #00ff41;
+    font-size: 22px;
+  }
+
+  .profile-info { flex: 1; }
+  .profile-name { color: #e6edf3; font-size: 15px; font-weight: 600; margin-bottom: 2px; }
+  .profile-login { color: #8b949e; font-size: 12px; }
+  .profile-bio { color: #8b949e; font-size: 12px; margin-top: 4px; font-family: system-ui, sans-serif; }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+
+  .stat-card {
+    background: #161b22;
+    border: 1px solid #21262d;
+    border-radius: 6px;
+    padding: 12px 10px;
+    text-align: center;
+  }
+
+  .stat-value {
+    color: #00ff41;
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .stat-label {
+    color: #8b949e;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .section-title {
+    color: #8b949e;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 10px;
+  }
+
+  .lang-bars { display: flex; flex-direction: column; gap: 7px; margin-bottom: 20px; }
+
+  .lang-row { display: flex; align-items: center; gap: 8px; }
+
+  .lang-name { color: #c9d1d9; font-size: 11px; width: 80px; flex-shrink: 0; }
+
+  .lang-bar-bg {
+    flex: 1;
+    height: 6px;
+    background: #21262d;
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .lang-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.6s ease;
+  }
+
+  .lang-pct { color: #8b949e; font-size: 11px; width: 36px; text-align: right; flex-shrink: 0; }
+
+  .footer {
+    background: #161b22;
+    border-top: 1px solid #30363d;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: #8b949e;
+    font-size: 11px;
+  }
+
+  .footer a { color: #58a6ff; text-decoration: none; }
+  .footer a:hover { text-decoration: underline; }
+
+  .state-box {
+    padding: 40px 16px;
+    text-align: center;
+    color: #8b949e;
+    font-size: 12px;
+  }
+
+  .error { color: #f85149; }
+
+  .dot {
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    display: inline-block;
+    flex-shrink: 0;
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script>
+const USERNAME = 'liamromanis101';
+
+const LANG_COLORS = {
+  Python: '#3572A5', JavaScript: '#f1e05a', TypeScript: '#2b7489',
+  PHP: '#4F5D95', Shell: '#89e051', 'C#': '#178600',
+  C: '#555555', 'C++': '#f34b7d', Perl: '#0298c3', Ruby: '#701516',
+  HTML: '#e34c26', CSS: '#563d7c', Go: '#00ADD8', Rust: '#dea584',
+  Java: '#b07219', Kotlin: '#A97BFF', Swift: '#ffac45'
+};
+
+function fmt(n) {
+  if (n >= 1000) return (n / 1000).toFixed(1) + 'k';
+  return String(n);
+}
+
+async function fetchAll() {
+  const [userRes, reposRes] = await Promise.all([
+    fetch(`https://api.github.com/users/${USERNAME}`),
+    fetch(`https://api.github.com/users/${USERNAME}/repos?per_page=100&type=owner`)
+  ]);
+  if (!userRes.ok) throw new Error('GitHub API error: ' + userRes.status);
+  const user = await userRes.json();
+  const repos = reposRes.ok ? await reposRes.json() : [];
+  return { user, repos: repos.filter ? repos.filter(r => !r.fork) : [] };
+}
+
+function calcLangStats(repos) {
+  const counts = {};
+  repos.forEach(r => {
+    if (r.language) counts[r.language] = (counts[r.language] || 0) + 1;
+  });
+  const total = Object.values(counts).reduce((a, b) => a + b, 0);
+  return Object.entries(counts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 6)
+    .map(([lang, count]) => ({ lang, pct: Math.round((count / total) * 100) }));
+}
+
+function renderStats(user, repos) {
+  const totalStars = repos.reduce((s, r) => s + r.stargazers_count, 0);
+  const totalForks = repos.reduce((s, r) => s + r.forks_count, 0);
+  const langs = calcLangStats(repos);
+  const now = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+
+  const statCards = [
+    { value: fmt(totalStars),       label: 'Total Stars' },
+    { value: fmt(totalForks),       label: 'Total Forks' },
+    { value: fmt(user.public_repos),label: 'Repos' },
+    { value: fmt(user.followers),   label: 'Followers' },
+    { value: fmt(user.following),   label: 'Following' },
+    { value: fmt(user.public_gists),label: 'Gists' },
+  ].map(s => `
+    <div class="stat-card">
+      <div class="stat-value">${s.value}</div>
+      <div class="stat-label">${s.label}</div>
+    </div>`).join('');
+
+  const langBars = langs.map(({ lang, pct }) => `
+    <div class="lang-row">
+      <span class="lang-name">
+        <span class="dot" style="background:${LANG_COLORS[lang] || '#8b949e'};margin-right:5px;vertical-align:middle"></span>${lang}
+      </span>
+      <div class="lang-bar-bg">
+        <div class="lang-bar-fill" style="width:${pct}%;background:${LANG_COLORS[lang] || '#8b949e'}"></div>
+      </div>
+      <span class="lang-pct">${pct}%</span>
+    </div>`).join('');
+
+  const avatarHtml = user.avatar_url
+    ? `<img class="avatar" src="${user.avatar_url}" alt="${user.login}" />`
+    : `<div class="avatar-placeholder">LR</div>`;
+
+  document.getElementById('root').innerHTML = `
+    <div class="title-bar">
+      <span class="prompt">$</span>
+      <span class="cmd">cat github_stats.json</span>
+      <span class="timestamp">fetched ${now}</span>
+    </div>
+    <div class="body">
+      <div class="profile-row">
+        ${avatarHtml}
+        <div class="profile-info">
+          <div class="profile-name">${user.name || user.login}</div>
+          <div class="profile-login">@${user.login}</div>
+          ${user.bio ? `<div class="profile-bio">${user.bio}</div>` : ''}
+        </div>
+      </div>
+      <div class="stats-grid">${statCards}</div>
+      ${langs.length ? `<div class="section-title">top languages (by repo count)</div>
+      <div class="lang-bars">${langBars}</div>` : ''}
+    </div>
+    <div class="footer">
+      <span>github.com/${USERNAME}</span>
+      <a href="https://github.com/${USERNAME}" target="_blank" rel="noreferrer">view profile →</a>
+    </div>`;
+}
+
+async function init() {
+  document.getElementById('root').innerHTML = `
+    <div class="title-bar">
+      <span class="prompt">$</span>
+      <span class="cmd">cat github_stats.json</span>
+    </div>
+    <div class="state-box">fetching stats from github api…</div>`;
+  try {
+    const { user, repos } = await fetchAll();
+    renderStats(user, repos);
+  } catch (e) {
+    document.getElementById('root').innerHTML = `
+      <div class="title-bar">
+        <span class="prompt">$</span>
+        <span class="cmd">cat github_stats.json</span>
+      </div>
+      <div class="state-box error">✗ ${e.message}<br><span style="color:#8b949e">check network or GitHub API rate limit</span></div>`;
+  }
+}
+
+init();
+</script>
+</body>
+</html>
