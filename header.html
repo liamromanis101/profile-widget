@@ -121,8 +121,56 @@
     font-size: clamp(0.8rem, 1.4vw, 1.15rem);
     line-height: 2;
     opacity: 0;
+    min-width: min(620px, 82vw);
     text-shadow: 0 0 8px #00e5ff;
-    animation: bootup 3s forwards, bootGlitch 0.4s steps(2, end) infinite;
+    animation: bootup 0.7s forwards, bootGlitch 0.4s steps(2, end) infinite;
+  }
+
+  .boot-line {
+    min-height: 2em;
+    white-space: nowrap;
+  }
+
+  .cursor {
+    display: inline-block;
+    margin-left: 4px;
+    color: #ff00c8;
+    text-shadow: 0 0 8px #ff00c8;
+    animation: cursorBlink 0.7s steps(1) infinite;
+  }
+
+  @keyframes cursorBlink {
+    0%, 45% { opacity: 1; }
+    46%, 100% { opacity: 0; }
+  }
+
+  .boot-progress {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-top: 14px;
+    color: #ff7be5;
+    letter-spacing: 2px;
+    text-shadow: 0 0 10px #ff00c8;
+  }
+
+  .boot-bar {
+    position: relative;
+    display: inline-block;
+    width: min(360px, 58vw);
+    height: 10px;
+    border: 1px solid rgba(255,0,200,0.7);
+    box-shadow: 0 0 14px rgba(255,0,200,0.35), inset 0 0 10px rgba(0,255,255,0.12);
+    overflow: hidden;
+  }
+
+  .boot-bar span {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 0%;
+    background: linear-gradient(90deg, #ff00c8, #00e5ff);
+    box-shadow: 0 0 16px #00e5ff;
+    transition: width 0.08s linear;
   }
 
   @keyframes bootup {
@@ -141,17 +189,24 @@
     z-index: 5;
     opacity: 0;
     transform: scale(1.18);
-    animation: reveal 2.5s ease forwards;
-    animation-delay: 3s;
+    transition: opacity 2.5s ease, filter 2.5s ease, transform 2.5s ease;
+    filter: blur(14px) hue-rotate(80deg);
   }
 
-  @keyframes reveal {
-    0% { opacity: 0; filter: blur(14px) hue-rotate(80deg); transform: scale(1.18) rotateX(8deg); }
-    30% { opacity: 1; filter: blur(4px) hue-rotate(-40deg); transform: scale(1.06); }
+  .logo-wrap.revealed {
+    opacity: 1;
+    filter: blur(0) hue-rotate(0deg);
+    transform: scale(1);
+    animation: revealGlitch 0.8s ease 1;
+  }
+
+  @keyframes revealGlitch {
+    0% { transform: scale(1.18) rotateX(8deg); }
+    30% { transform: scale(1.06); }
     42% { transform: translateX(-12px) scale(1.03); }
     46% { transform: translateX(14px) scale(1.03); }
     50% { transform: translateX(0) scale(1.02); }
-    100% { opacity: 1; filter: blur(0) hue-rotate(0deg); transform: scale(1); }
+    100% { transform: scale(1); }
   }
 
   .ascii-box {
@@ -261,12 +316,12 @@
   <div class="rain"></div>
   <div class="particles" id="particles"></div>
 
-  <div class="boot">
-    > INITIALIZING LR101 SYSTEMS<br>
-    > LOADING SECURITY MODULES<br>
-    > BYPASSING TRACE ROUTINES<br>
-    > CONNECTING TO GRID<br>
-    > ACCESS GRANTED
+  <div class="boot" id="boot">
+    <div id="bootText"></div>
+    <div class="boot-progress">
+      <span id="bootPercent">0%</span>
+      <span class="boot-bar"><span id="bootFill"></span></span>
+    </div>
   </div>
 
   <div class="logo-wrap">
@@ -293,6 +348,89 @@
   const intro = document.getElementById('intro');
   const particles = document.getElementById('particles');
   const toggle = document.getElementById('audioToggle');
+  const bootText = document.getElementById('bootText');
+  const bootPercent = document.getElementById('bootPercent');
+  const bootFill = document.getElementById('bootFill');
+  const logoWrap = document.querySelector('.logo-wrap');
+
+  const bootLines = [
+    '> INITIALIZING LR101 SYSTEMS',
+    '> LOADING SECURITY MODULES',
+    '> BYPASSING TRACE ROUTINES',
+    '> CONNECTING TO GRID',
+    '> ACCESS GRANTED'
+  ];
+
+  const totalChars = bootLines.join('').length;
+  let typedChars = 0;
+  let fxCtx;
+
+  function ensureFxContext() {
+    if (!fxCtx) fxCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (fxCtx.state === 'suspended') fxCtx.resume();
+  }
+
+  function keyPressFx() {
+    ensureFxContext();
+
+    const now = fxCtx.currentTime;
+    const osc = fxCtx.createOscillator();
+    const gainNode = fxCtx.createGain();
+    const filter = fxCtx.createBiquadFilter();
+
+    osc.type = Math.random() > 0.55 ? 'square' : 'sawtooth';
+    osc.frequency.setValueAtTime(650 + Math.random() * 850, now);
+    osc.frequency.exponentialRampToValueAtTime(180 + Math.random() * 180, now + 0.035);
+
+    filter.type = 'bandpass';
+    filter.frequency.value = 1200 + Math.random() * 2200;
+    filter.Q.value = 8;
+
+    gainNode.gain.setValueAtTime(0.0001, now);
+    gainNode.gain.exponentialRampToValueAtTime(0.045, now + 0.006);
+    gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.055);
+
+    osc.connect(filter);
+    filter.connect(gainNode);
+    gainNode.connect(fxCtx.destination);
+
+    osc.start(now);
+    osc.stop(now + 0.06);
+  }
+
+  async function typeBootSequence() {
+    bootText.innerHTML = '';
+
+    for (let lineIndex = 0; lineIndex < bootLines.length; lineIndex++) {
+      const line = document.createElement('div');
+      line.className = 'boot-line';
+      bootText.appendChild(line);
+
+      for (let charIndex = 0; charIndex < bootLines[lineIndex].length; charIndex++) {
+        line.textContent += bootLines[lineIndex][charIndex];
+        line.innerHTML = `${line.textContent}<span class="cursor">█</span>`;
+
+        typedChars++;
+        const progress = Math.round((typedChars / totalChars) * 100);
+        bootPercent.textContent = `${progress}%`;
+        bootFill.style.width = `${progress}%`;
+
+        keyPressFx();
+        await new Promise(resolve => setTimeout(resolve, 28 + Math.random() * 34));
+      }
+
+      line.textContent = bootLines[lineIndex];
+      await new Promise(resolve => setTimeout(resolve, 220));
+    }
+
+    bootPercent.textContent = '100%';
+    bootFill.style.width = '100%';
+    await new Promise(resolve => setTimeout(resolve, 450));
+    logoWrap.classList.add('revealed');
+  }
+
+  window.addEventListener('pointerdown', ensureFxContext, { once: true });
+  typeBootSequence();
 
   // Mouse-reactive glow.
   window.addEventListener('mousemove', (event) => {
